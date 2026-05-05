@@ -13,7 +13,11 @@ class PauseScene extends Phaser.Scene{
 
         this.add.rectangle(400, 300, 1200, 800, 0x000000, 0.5);
 
-        this.add.text(game.config.width/2, game.config.height/2, "Paused\nPress ESC to resume", {
+        this.add.text(game.config.width/2, game.config.height/5, "Paused", {
+            fontSize: "32px",
+        }).setOrigin(0.5);
+
+        this.add.text(game.config.width/2, game.config.height/2, "W and S keys to move up and down\nSPACE to shoot\nESC to Pause/Resume", {
             fontSize: "32px",
         }).setOrigin(0.5);
 
