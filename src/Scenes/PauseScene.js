@@ -11,7 +11,7 @@ class PauseScene extends Phaser.Scene{
     create() {
         document.getElementById('description').innerHTML = '<h2>Red Fish Blue Fish - Trinity Willis </h2>'
 
-        this.add.rectangle(400, 300, 800, 600, 0x000000, 0.5);
+        this.add.rectangle(400, 300, 1200, 800, 0x000000, 0.5);
 
         this.add.text(game.config.width/2, game.config.height/2, "Paused\nPress ESC to resume", {
             fontSize: "32px",

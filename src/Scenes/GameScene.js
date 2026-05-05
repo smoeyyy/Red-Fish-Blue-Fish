@@ -13,6 +13,9 @@ class GameScene extends Phaser.Scene{
         this.load.image("smallBubble", "bubble_a.png");
         this.load.image("fullBubble", "bubble_b.png");
         this.load.image("bigBubble", "bubble_c.png");
+
+        this.load.audio("enemyHit", "universfield-bubble-pop-06-351337.mp3");
+        this.load.audio("playerHit", "universfield-bubble-pop-02-293341.mp3");
     }
 
     create() {
@@ -37,6 +40,9 @@ class GameScene extends Phaser.Scene{
         ];
 
         this.my.sprite.player = this.add.sprite(game.config.width/12, game.config.height/2, "redFish");
+
+        this.enemyHitSound = this.sound.add("enemyHit");
+        this.playerHitSound = this.sound.add("playerHit");
 
         this.playerHealth = 3;
 
@@ -193,7 +199,7 @@ class GameScene extends Phaser.Scene{
                 if (enemy.active && this.collides(enemy, bullet)) {
 
                     enemy.health = (enemy.health || 1) - 1;
-
+                    this.playerHitSound.play();
                     bullet.destroy();
 
                     if (enemy.health <= 0) {
@@ -215,10 +221,12 @@ class GameScene extends Phaser.Scene{
             return alive;
         });
 
+        // Collision detection for enemy bullets
         this.my.sprite.enemyBullets = this.my.sprite.enemyBullets.filter((bullet) => {
             let alive = true;
 
             if (this.collides(bullet, this.my.sprite.player)) {
+                this.enemyHitSound.play();
                 bullet.destroy();
                 this.takeDamage();
                 alive = false;
