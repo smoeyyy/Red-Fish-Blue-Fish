@@ -34,8 +34,8 @@ class GameScene extends Phaser.Scene{
         this.tileSize = 64;
         this.gridWidth = Math.ceil(game.config.width / this.tileSize);
         this.gridHeight = Math.ceil(game.config.height / this.tileSize);
-        this.bgTiles = ["water"];                // normal background
-        this.floorTiles1 = ["sand1", "sand2", "sand3", "sand4"];   // bottom rows
+        this.bgTiles = ["water"];                                   // normal background
+        this.floorTiles1 = ["sand1", "sand2", "sand3", "sand4"];    // bottom rows
 
         this.grid = [];
 
@@ -209,7 +209,6 @@ class GameScene extends Phaser.Scene{
 
             //boss collision
             if (enemy === this.boss) {
-                enemy.x -= enemy.speed * dt;
                 if (this.collides(enemy, this.my.sprite.player) || enemy.x < this.my.sprite.player.x - enemy.displayWidth) {
                     this.triggerGameOver();
                     return;
@@ -295,9 +294,16 @@ class GameScene extends Phaser.Scene{
 
     collides(a, b) {
         if (!a || !b) return false;
-        if (Math.abs(a.x - b.x) > (a.displayWidth/2 + b.displayWidth/2)) return false;
-        if (Math.abs(a.y - b.y) > (a.displayHeight/2 + b.displayHeight/2)) return false;
-        return true;
+
+        let ar = a.displayWidth * 0.3;
+        let br = b.displayWidth * 0.3;
+
+        let dx = a.x - b.x;
+        let dy = a.y - b.y;
+
+        let dist = Math.sqrt(dx * dx + dy * dy);
+
+        return dist < (ar + br);
     }
 
     updateScore() {
