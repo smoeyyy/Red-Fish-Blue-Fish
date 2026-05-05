@@ -27,6 +27,9 @@ class GameScene extends Phaser.Scene{
 
     create() {
         this.isPaused = false;
+        this.isGameWon = false;
+        this.time.removeAllEvents();
+        this.enemyShootEvent = null;
 
         document.getElementById('description').innerHTML = '<h2>Red Fish Blue Fish - Trinity Willis </h2>'
 
@@ -87,7 +90,7 @@ class GameScene extends Phaser.Scene{
         this.currentWaveIndex = 0;
         this.waveActive = false;
         this.waveConfig = null;
-        this.maxBullets = 3
+        this.maxBullets = 5
         this.bulletCount = this.maxBullets;
         this.waveSpawningDone = false;
         this.isGameOver = false;
@@ -104,7 +107,7 @@ class GameScene extends Phaser.Scene{
             loop: true,
             callback: () => {
 
-                if (this.enemies.length === 0 || this.isGameOver) return;
+                if (this.enemies.length === 0 || this.isGameOver || this.isGameWon) return;
 
                 // pick a random enemy
                 let shooter = Phaser.Utils.Array.GetRandom(this.enemies);
@@ -133,7 +136,7 @@ class GameScene extends Phaser.Scene{
         this.my.text.score = this.add.text(game.config.width/6, game.config.height/10, "Score: " + this.myScore, {fontSize: "32px"}).setOrigin(0.5);
         this.my.text.bulletCounts = this.add.text(game.config.width/2, game.config.height/10, "Bubbles: " + this.bulletCount, {fontSize: "32px"}).setOrigin(0.5);
         this.my.text.waveCounts = this.add.text(game.config.width/6*5, game.config.height/10, "Wave: " + (this.currentWaveIndex+1), {fontSize: "32px"}).setOrigin(0.5);
-        this.my.text.health = this.add.text(game.config.width/6, game.config.height/10*9, "Health: " + this.playerHealth, {fontSize: "32px"}).setOrigin(0.5);
+        this.my.text.health = this.add.text(game.config.width/6, game.config.height/10*8, "Health: " + this.playerHealth, {fontSize: "32px"}).setOrigin(0.5);
 
         //Pause Scene Implementation
         this.escapeKey = this.input.keyboard.addKey(
@@ -148,7 +151,7 @@ class GameScene extends Phaser.Scene{
   }
 
     update(time, delta){
-        if (this.isGameOver) {
+        if (this.isGameOver || this.isGameWon) {
             if (Phaser.Input.Keyboard.JustDown(this.restartKey)) {
                 this.scene.restart();
             }
@@ -286,9 +289,12 @@ class GameScene extends Phaser.Scene{
             this.waveActive = false;
             this.currentWaveIndex++;
 
-            if (this.currentWaveIndex < this.waves.length) {
-                this.startWave();
+            if (this.currentWaveIndex >= this.waves.length) {
+                this.triggerWin();
+                return;
             }
+
+            this.startWave();
         }
     }
 
@@ -333,6 +339,32 @@ class GameScene extends Phaser.Scene{
         this.time.delayedCall(800, () => {
             this.isInvincible = false;
         });
+    }
+
+    triggerWin() {
+        this.isGameWon = true;
+
+        this.waveActive = false;
+
+        for (let enemy of this.enemies) {
+            enemy.setActive(false);
+            enemy.destroy();
+        }
+
+        this.enemies = [];
+
+        this.enemyShootEvent.remove();
+        this.time.removeAllEvents();
+
+        this.my.text.winScreen = this.add.text(
+            game.config.width / 2,
+            game.config.height / 2,
+            "YOU WIN!\nPress R to Restart",
+            {
+                fontSize: "48px",
+                align: "center"
+            }
+        ).setOrigin(0.5);
     }
 
     triggerGameOver() {
@@ -410,10 +442,7 @@ class GameScene extends Phaser.Scene{
             repeat: this.waveConfig.enemyCount - 1,
             callback: () => {
 
-                let enemy = this.add.sprite(
-                    800,
-                    Phaser.Math.Between(50, 550),
-                    "blueFish"
+                let enemy = this.add.sprite(game.config.width/10*9, Phaser.Math.Between(50, 550),"blueFish"
                 );
 
                 enemy.setFlipX(true);
