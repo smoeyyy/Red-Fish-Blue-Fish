@@ -14,6 +14,13 @@ class GameScene extends Phaser.Scene{
         this.load.image("fullBubble", "bubble_b.png");
         this.load.image("bigBubble", "bubble_c.png");
 
+        this.load.image("water", "background_terrain.png");
+
+        this.load.image("sand1", "terrain_sand_a.png");
+        this.load.image("sand2", "terrain_sand_b.png");
+        this.load.image("sand3", "terrain_sand_c.png");
+        this.load.image("sand4", "terrain_sand_d.png");
+
         this.load.audio("enemyHit", "universfield-bubble-pop-06-351337.mp3");
         this.load.audio("playerHit", "universfield-bubble-pop-02-293341.mp3");
     }
@@ -22,6 +29,37 @@ class GameScene extends Phaser.Scene{
         this.isPaused = false;
 
         document.getElementById('description').innerHTML = '<h2>Red Fish Blue Fish - Trinity Willis </h2>'
+
+        //Background
+        this.tileSize = 64;
+        this.gridWidth = Math.ceil(game.config.width / this.tileSize);
+        this.gridHeight = Math.ceil(game.config.height / this.tileSize);
+        this.bgTiles = ["water"];                // normal background
+        this.floorTiles1 = ["sand1", "sand2", "sand3", "sand4"];   // bottom rows
+
+        this.grid = [];
+
+        for (let y = 0; y < this.gridHeight; y++) {
+            let row = [];
+
+            for (let x = 0; x < this.gridWidth; x++) {
+
+                let texture;
+
+                if (y === this.gridHeight - 1 || y === this.gridHeight - 2) {
+                    texture = Phaser.Utils.Array.GetRandom(this.floorTiles1);
+                }
+                else {
+                    texture = Phaser.Utils.Array.GetRandom(this.bgTiles);
+                }
+
+                let tile = this.add.sprite(x * this.tileSize, y * this.tileSize, texture).setOrigin(0);
+                row.push(tile);
+            }
+
+            this.grid.push(row);
+        }
+
 
         this.my = {
             sprite: {
