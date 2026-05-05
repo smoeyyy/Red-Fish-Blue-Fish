@@ -2,8 +2,6 @@ class GameScene extends Phaser.Scene{
 
     constructor() {
         super("gameScene");
-
-        this.myScore = 0;
     }
 
     preload() {
@@ -32,51 +30,66 @@ class GameScene extends Phaser.Scene{
         this.enemies = [];
 
         this.waves = [
-            {
-                enemyCount: 5,
-                enemySpeed: 100,
-                spawnDelay: 1200,
-                boss: false
-            },
-            {
-                enemyCount: 10,
-                enemySpeed: 150,
-                spawnDelay: 900,
-                boss: false
-            },
-            {
-                enemyCount: 15,
-                enemySpeed: 200,
-                spawnDelay: 600,
-                boss: true
-            }
+            { enemyCount: 5, enemySpeed: 100, spawnDelay: 1200 },
+            { enemyCount: 10, enemySpeed: 150, spawnDelay: 900 },
+            { enemyCount: 15, enemySpeed: 200, spawnDelay: 600 },
+            { enemyCount: 1, enemySpeed: 85, spawnDelay: 0, boss: true }
         ];
 
         this.my.sprite.player = this.add.sprite(game.config.width/12, game.config.height/2, "redFish");
 
+        this.playerHealth = 3;
+
         this.currentWaveIndex = 0;
         this.waveActive = false;
         this.waveConfig = null;
-        this.maxBullets = 5
+        this.maxBullets = 3
         this.bulletCount = this.maxBullets;
-        this.bossSpawned = false;
-        this.boss = null;
-        this.waveCleared = false;
+        this.waveSpawningDone = false;
+        this.isGameOver = false;
+        this.myScore = 0;
+        this.isInvincible = false;
 
         this.playerSpeed = 300;
         this.bulletSpeed = 300;
-        this.enemySpeed = 200;
+        this.enemyBulletSpeed = 250;
+
+        //Random event shooting
+        this.enemyShootEvent = this.time.addEvent({
+            delay: 1400,
+            loop: true,
+            callback: () => {
+
+                if (this.enemies.length === 0 || this.isGameOver) return;
+
+                // pick a random enemy
+                let shooter = Phaser.Utils.Array.GetRandom(this.enemies);
+
+                if (!shooter || !shooter.active) return;
+
+                this.my.sprite.enemyBullets.push(
+                    this.add.sprite(
+                        shooter.x - shooter.displayWidth / 2,
+                        shooter.y,
+                        "smallBubble"
+                    )
+                );
+            }
+        });
 
         //Inputs
         this.up = this.input.keyboard.addKey("W");
         this.down = this.input.keyboard.addKey("S");
         this.space = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+        this.restartKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
 
         this.my.text = { text: {} };
 
         //On Screen Text
-        this.my.text.score = this.add.text(game.config.width/4, game.config.height/10, "Score: " + this.myScore, {fontSize: "32px"}).setOrigin(0.5);
+        this.my.text.score = this.add.text(game.config.width/6, game.config.height/10, "Score: " + this.myScore, {fontSize: "32px"}).setOrigin(0.5);
         this.my.text.bulletCounts = this.add.text(game.config.width/2, game.config.height/10, "Bubbles: " + this.bulletCount, {fontSize: "32px"}).setOrigin(0.5);
+        this.my.text.waveCounts = this.add.text(game.config.width/6*5, game.config.height/10, "Wave: " + (this.currentWaveIndex+1), {fontSize: "32px"}).setOrigin(0.5);
+        this.my.text.health = this.add.text(game.config.width/6, game.config.height/10*9, "Health: " + this.playerHealth, {fontSize: "32px"}).setOrigin(0.5);
 
         //Pause Scene Implementation
         this.escapeKey = this.input.keyboard.addKey(
@@ -91,6 +104,13 @@ class GameScene extends Phaser.Scene{
   }
 
     update(time, delta){
+        if (this.isGameOver) {
+            if (Phaser.Input.Keyboard.JustDown(this.restartKey)) {
+                this.scene.restart();
+            }
+            return;
+        }
+
         if (this.isPaused) return;
 
         let my = this.my;
@@ -119,20 +139,13 @@ class GameScene extends Phaser.Scene{
         }
 
         this.enemies = this.enemies.filter(enemy => enemy.active);
-        
-        //Spawn Boss?
-        if (this.waveCleared && this.waveHasBoss && !this.bossSpawned) {
-            this.bossSpawned = true;
-            this.spawnBoss();
-        }
 
         // Start wave
-        if (this.waveCleared && !this.waveHasBoss && !this.waveActive) {
-            this.waveCleared = false;
+        if (!this.waveActive && this.enemies.length === 0 && this.currentWaveIndex < this.waves.length) {
             this.startWave();
         }
 
-        //Bullet Movement
+        // Player Bullet Movement
         for (let bullet of my.sprite.playerBullets) {
             bullet.x += this.bulletSpeed * dt;
         }
@@ -142,19 +155,52 @@ class GameScene extends Phaser.Scene{
             enemy.x -= enemy.speed * dt;
         }
 
-        //Collision detection
-        my.sprite.playerBullets = my.sprite.playerBullets.filter((bullet) => {
+        // Enemy Bullet Movement
+        for (let bullet of this.my.sprite.enemyBullets) {
+            bullet.x -= this.enemyBulletSpeed * dt;
+        }
 
+        // collision with player
+        for (let enemy of this.enemies) {
+
+            //boss collision
+            if (enemy === this.boss) {
+                enemy.x -= enemy.speed * dt;
+                if (this.collides(enemy, this.my.sprite.player) || enemy.x < this.my.sprite.player.x - enemy.displayWidth) {
+                    this.triggerGameOver();
+                    return;
+                }
+                continue;
+            }
+
+            if (this.collides(enemy, this.my.sprite.player)) {
+                enemy.destroy();
+                this.takeDamage();
+                continue;
+            }
+             if (enemy.x < this.my.sprite.player.x) {
+                enemy.destroy();
+                this.takeDamage();
+                continue;
+            }
+        }
+
+        //Collision detection for player bulets
+        my.sprite.playerBullets = my.sprite.playerBullets.filter((bullet) => {
             let alive = true;
 
             for (let enemy of this.enemies) {
                 if (enemy.active && this.collides(enemy, bullet)) {
 
-                    bullet.destroy();
-                    enemy.destroy();
+                    enemy.health = (enemy.health || 1) - 1;
 
-                    this.myScore += enemy.scorePoints;
-                    this.updateScore();
+                    bullet.destroy();
+
+                    if (enemy.health <= 0) {
+                        enemy.destroy();
+                        this.myScore += enemy.scorePoints;
+                        this.updateScore();
+                    }
 
                     alive = false;
                     break;
@@ -169,43 +215,35 @@ class GameScene extends Phaser.Scene{
             return alive;
         });
 
-        // Boss logic
-        my.sprite.playerBullets = my.sprite.playerBullets.filter((bullet) => {
+        this.my.sprite.enemyBullets = this.my.sprite.enemyBullets.filter((bullet) => {
+            let alive = true;
 
-            if (this.boss && this.boss.active && this.collides(this.boss, bullet)) {
-
-                this.boss.health--;
+            if (this.collides(bullet, this.my.sprite.player)) {
                 bullet.destroy();
-
-                if (this.boss.health <= 0) {
-
-                    this.myScore += this.boss.scorePoints;
-                    this.updateScore();
-
-                    this.boss.destroy();
-                    this.boss = null;
-
-                    this.currentWaveIndex++;
-                    this.waveActive = false;
-                    this.bossSpawned = false;
-                    this.waveCleared = true;
-                    this.waveHasBoss = false;
-                }
-
-                return false;
+                this.takeDamage();
+                alive = false;
             }
 
-            return true;
+            if (bullet.x < -bullet.displayWidth) {
+                bullet.destroy();
+                alive = false;
+            }
+
+            return alive;
         });
 
         // Update Bullet Count
         this.bulletCount = this.maxBullets - this.my.sprite.playerBullets.filter(b => b.active).length;
         this.updateBulletCount();
 
-        if (this.waveActive && this.enemies.length === 0 && !this.waveHasBoss) {
+        // Wave Completion
+        if (this.waveActive && this.waveSpawningDone && this.enemies.length === 0) {
             this.waveActive = false;
-            this.waveCleared = true;
             this.currentWaveIndex++;
+
+            if (this.currentWaveIndex < this.waves.length) {
+                this.startWave();
+            }
         }
     }
 
@@ -226,12 +264,94 @@ class GameScene extends Phaser.Scene{
         my.text.bulletCounts.setText("Bubbles: " + this.bulletCount);
     }
 
+    takeDamage() {
+
+        if (this.isInvincible) return;
+
+        this.playerHealth -= 1;
+        this.my.text.health.setText("Health: " + this.playerHealth);
+
+        if (this.playerHealth <= 0) {
+            this.triggerGameOver();
+            return;
+        }
+
+        this.isInvincible = true;
+
+        this.time.delayedCall(800, () => {
+            this.isInvincible = false;
+        });
+    }
+
+    triggerGameOver() {
+        this.isGameOver = true;
+
+        this.waveActive = false;
+
+        for (let enemy of this.enemies) {
+            enemy.setActive(false);
+            enemy.destroy();
+        }
+        this.enemies = [];
+        this.enemyShootEvent.remove();
+        this.time.removeAllEvents();
+
+        this.my.text.gameOver = this.add.text(game.config.width / 2, game.config.height / 2, "GAME OVER\nPress R to Restart", {fontSize: "48px", align: "center"}).setOrigin(0.5);
+    }
+
     startWave() {
+        this.my.text.waveCounts.setText("Wave: " + (this.currentWaveIndex+1));
 
-        this.waveConfig = this.waves[this.currentWaveIndex];
         this.waveActive = true;
+        this.waveConfig = this.waves[this.currentWaveIndex];
+        this.waveSpawningDone = false;
 
-        this.enemiesRemainingToSpawn = this.waveConfig.enemyCount;
+        this.enemies = [];
+        this.boss = null;
+
+        // FINAL WAVE: FORMATION + BOSS
+        if (this.waveConfig.boss) {
+
+            const positions = [
+                [game.config.width/10*9, game.config.height/2 - 200],
+                [game.config.width/10*9, game.config.height/2 + 200],
+                [game.config.width/10*9 - 100, game.config.height/2 - 100],
+                [game.config.width/10*9 - 100, game.config.height/2 + 100],
+                [game.config.width/10*9 - 200, game.config.height/2]
+            ];
+
+            // formation enemies
+            for (let pos of positions) {
+                let e = this.add.sprite(pos[0], pos[1], "greenFish");
+                e.setFlipX(true);
+                e.health = 1;
+                e.scorePoints = 25;
+                e.speed = this.waveConfig.enemySpeed
+                this.enemies.push(e);
+            }
+
+            // boss
+            this.boss = this.add.sprite(
+                game.config.width/10 * 9,
+                game.config.height/2,
+                "greenFish"
+            );
+
+            this.boss.setScale(3);
+            this.boss.setFlipX(true);
+            this.boss.health = 10;
+            this.boss.scorePoints = 500;
+            this.boss.speed = this.waveConfig.enemySpeed;
+
+            this.enemies.push(this.boss);
+
+            this.waveSpawningDone = true;
+
+            return;
+        }
+
+        // NORMAL WAVES (1–3)
+        let spawned = 0;
 
         this.time.addEvent({
             delay: this.waveConfig.spawnDelay,
@@ -247,23 +367,16 @@ class GameScene extends Phaser.Scene{
                 enemy.setFlipX(true);
                 enemy.speed = this.waveConfig.enemySpeed;
                 enemy.scorePoints = 25;
+                enemy.health = 1;
 
                 this.enemies.push(enemy);
+
+                spawned++;
+                if (spawned === this.waveConfig.enemyCount) {
+                    this.waveSpawningDone = true;
+                }
             }
         });
-
-        this.waveHasBoss = this.waveConfig.boss;
-    }
-
-    spawnBoss() {
-
-        let sizeMultiplier = 1 + this.currentWaveIndex * 0.5;
-
-        this.boss = this.add.sprite(800, 300, "greenFish");
-        this.boss.setScale(3 * sizeMultiplier);
-
-        this.boss.health = 10 + this.currentWaveIndex * 5;
-        this.boss.scorePoints = 100 * (this.currentWaveIndex + 1);
     }
 
 }
