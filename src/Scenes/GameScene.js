@@ -199,7 +199,23 @@ class GameScene extends Phaser.Scene{
 
         // Enemy Movement
         for (let enemy of this.enemies) {
+            //Normal Enemies
+            if (enemy !== this.boss) {
+                enemy.x -= enemy.speed * dt;
+                continue;
+            }
+
+            //Boss Movement
+            enemy.timeOffset += dt;
+
             enemy.x -= enemy.speed * dt;
+
+            enemy.y = enemy.startY + Math.sin(enemy.timeOffset * enemy.zigzagSpeed) * enemy.zigzagAmplitude;
+
+            if (enemy.x < this.my.sprite.player.x - enemy.displayWidth) {
+                this.triggerGameOver();
+                return;
+            }
         }
 
         // Enemy Bullet Movement
@@ -397,11 +413,11 @@ class GameScene extends Phaser.Scene{
         if (this.waveConfig.boss) {
 
             const positions = [
-                [game.config.width/10*9, game.config.height/2 - 200],
-                [game.config.width/10*9, game.config.height/2 + 200],
-                [game.config.width/10*9 - 100, game.config.height/2 - 100],
-                [game.config.width/10*9 - 100, game.config.height/2 + 100],
-                [game.config.width/10*9 - 200, game.config.height/2]
+                [game.config.width/10*9, game.config.height/2 - 300],
+                [game.config.width/10*9, game.config.height/2 + 300],
+                [game.config.width/10*9 - 200, game.config.height/2 - 200],
+                [game.config.width/10*9 - 200, game.config.height/2 + 200],
+                [game.config.width/10*9 - 300, game.config.height/2]
             ];
 
             // formation enemies
@@ -426,6 +442,10 @@ class GameScene extends Phaser.Scene{
             this.boss.health = 10;
             this.boss.scorePoints = 500;
             this.boss.speed = this.waveConfig.enemySpeed;
+            this.boss.startY = game.config.height / 2;
+            this.boss.timeOffset = 0;
+            this.boss.zigzagAmplitude = 120;
+            this.boss.zigzagSpeed = 2;
 
             this.enemies.push(this.boss);
 
