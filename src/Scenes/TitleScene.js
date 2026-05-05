@@ -11,7 +11,7 @@ class TitleScene extends Phaser.Scene{
     create() {
         document.getElementById('description').innerHTML = '<h2>Red Fish Blue Fish - Trinity Willis </h2>'
 
-        this.add.text(600, 300, "CLICK TO START", {
+        this.add.text(game.config.width/2, game.config.height/2, "CLICK TO START", {
             fontSize: "32px",
         }).setOrigin(0.5);
 

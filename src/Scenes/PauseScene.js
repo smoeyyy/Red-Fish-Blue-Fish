@@ -13,7 +13,7 @@ class PauseScene extends Phaser.Scene{
 
         this.add.rectangle(400, 300, 800, 600, 0x000000, 0.5);
 
-        this.add.text(600, 300, "Paused\nPress ESC to resume", {
+        this.add.text(game.config.width/2, game.config.height/2, "Paused\nPress ESC to resume", {
             fontSize: "32px",
         }).setOrigin(0.5);
 
@@ -24,6 +24,8 @@ class PauseScene extends Phaser.Scene{
         this.escapeKey.on("down", () => {
             this.scene.stop();
             this.scene.resume("gameScene");
+            let gameScene = this.scene.get("gameScene");
+            gameScene.isPaused = false;
         });
     }
 
