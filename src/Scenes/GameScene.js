@@ -79,8 +79,6 @@ class GameScene extends Phaser.Scene{
             { enemyCount: 10, enemySpeed: 150, spawnDelay: 900 },
             { enemyCount: 15, enemySpeed: 150, spawnDelay: 900 },
             { enemyCount: 15, enemySpeed: 200, spawnDelay: 600 },
-            { enemyCount: 15, enemySpeed: 200, spawnDelay: 600 },
-            { enemyCount: 10, enemySpeed: 200, spawnDelay: 300 },
             { enemyCount: 1, enemySpeed: 85, spawnDelay: 0, boss: true }
         ];
 
@@ -139,7 +137,7 @@ class GameScene extends Phaser.Scene{
         //On Screen Text
         this.my.text.score = this.add.text(game.config.width/6, game.config.height/10, "Score: " + this.myScore, {fontSize: "32px"}).setOrigin(0.5);
         this.my.text.bulletCounts = this.add.text(game.config.width/2, game.config.height/10, "Bubbles: " + this.bulletCount, {fontSize: "32px"}).setOrigin(0.5);
-        this.my.text.waveCounts = this.add.text(game.config.width/6*5, game.config.height/10, "Wave: " + (this.currentWaveIndex+1), {fontSize: "32px"}).setOrigin(0.5);
+        this.my.text.waveCounts = this.add.text(game.config.width/6*5, game.config.height/10, "Wave: " + (this.currentWaveIndex+1) + "/6", {fontSize: "32px"}).setOrigin(0.5);
         this.my.text.health = this.add.text(game.config.width/6, game.config.height/10*8, "Health: " + this.playerHealth, {fontSize: "32px"}).setOrigin(0.5);
 
         //Pause Scene Implementation
@@ -404,7 +402,7 @@ class GameScene extends Phaser.Scene{
     }
 
     startWave() {
-        this.my.text.waveCounts.setText("Wave: " + (this.currentWaveIndex+1));
+        this.my.text.waveCounts.setText("Wave: " + (this.currentWaveIndex+1) + "/6");
 
         this.waveActive = true;
         this.waveConfig = this.waves[this.currentWaveIndex];
