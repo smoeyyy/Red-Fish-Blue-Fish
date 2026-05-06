@@ -75,8 +75,12 @@ class GameScene extends Phaser.Scene{
 
         this.waves = [
             { enemyCount: 5, enemySpeed: 100, spawnDelay: 1200 },
+            { enemyCount: 10, enemySpeed: 100, spawnDelay: 900 },
             { enemyCount: 10, enemySpeed: 150, spawnDelay: 900 },
+            { enemyCount: 15, enemySpeed: 150, spawnDelay: 900 },
             { enemyCount: 15, enemySpeed: 200, spawnDelay: 600 },
+            { enemyCount: 15, enemySpeed: 200, spawnDelay: 600 },
+            { enemyCount: 10, enemySpeed: 200, spawnDelay: 300 },
             { enemyCount: 1, enemySpeed: 85, spawnDelay: 0, boss: true }
         ];
 
@@ -454,7 +458,7 @@ class GameScene extends Phaser.Scene{
             return;
         }
 
-        // NORMAL WAVES (1–3)
+        // NORMAL WAVES
         let spawned = 0;
 
         this.time.addEvent({
